@@ -3,7 +3,8 @@ import functools
 import validators
 from flask import Blueprint, request, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
-from flaskr.constant.http_status_codes import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
+from flask_jwt_extended import create_access_token, create_refresh_token
+from flaskr.constant.http_status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
 from flaskr.model import db, User
 
 auth = Blueprint('auth', __name__, url_prefix="/api/v1/auth")
@@ -40,3 +41,28 @@ def register():
             'username':user.username, 'email':user.email
         }
     }), HTTP_201_CREATED
+    
+@auth.post('/login')
+def login():
+    username = request.json['username']
+    password = request.json['password']
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if user:
+        validate_password = check_password_hash(user.password, password)
+        
+        if validate_password:
+            access_token = create_access_token(identity=user.username, fresh=True)
+            refresh_token = create_refresh_token(identity=user.username)
+            return jsonify({
+                "user": {
+                    'access_token':access_token,
+                    'refresh_token': refresh_token,
+                    'info':{
+                        'username': user.username,
+                        'email': user.email
+                    }
+                    
+                }
+            }), HTTP_200_OK
