@@ -15,4 +15,5 @@ class User(db.Model):
     is_superuser = db.Column(db.Boolean, default=False)
     is_admin = db.Column(db.Boolean, default=False)
     is_staff = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=False)
     
