@@ -30,7 +30,7 @@ def register():
     
     hashed_pass = generate_password_hash(password)
     
-    user = User(username=username, email=email, password = hashed_pass, is_superuser=True, is_admin = True, is_staff=True)
+    user = User(username=username, email=email, password = hashed_pass, is_staff=True)
     
     db.session.add(user)
     db.session.commit()
@@ -49,7 +49,7 @@ def login():
     
     user = User.query.filter_by(username=username).first()
     
-    if user:
+    if user.is_admin == True:
         validate_password = check_password_hash(user.password, password)
         
         if validate_password:
@@ -66,3 +66,7 @@ def login():
                     
                 }
             }), HTTP_200_OK
+    else:
+        return jsonify({
+            "error": "Sorry You are not admin"
+        })
