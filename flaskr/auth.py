@@ -1,13 +1,21 @@
-import email
-import functools
+from ast import Not
 import validators
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt, JWTManager
 from flaskr.constant.http_status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
-from flaskr.model import db, User
+from flaskr.model import db, User, TokenBlocklist
 
 auth = Blueprint('auth', __name__, url_prefix="/api/v1/auth")
+
+jwt = JWTManager()
+
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload["jti"]
+    token = db.session.query(TokenBlocklist.id).filter_by(jti=jti).scalar()
+    return token is not None
 
 @auth.post('/register')
 def register():
@@ -30,7 +38,7 @@ def register():
     
     hashed_pass = generate_password_hash(password)
     
-    user = User(username=username, email=email, password = hashed_pass, is_staff=True)
+    user = User(username=username, email=email, password = hashed_pass, is_staff=True, is_admin=True)
     
     db.session.add(user)
     db.session.commit()
@@ -48,6 +56,9 @@ def login():
     password = request.json['password']
     
     user = User.query.filter_by(username=username).first()
+    
+    if user is None:
+        return jsonify({'msg': "email or password is invalid"}), HTTP_400_BAD_REQUEST
     
     if user.is_admin == True:
         validate_password = check_password_hash(user.password, password)
@@ -70,3 +81,46 @@ def login():
         return jsonify({
             "error": "Sorry You are not admin"
         })
+        
+@auth.route("/logout", methods=["DELETE"])
+@jwt_required()
+def modify_token():
+    jti = get_jwt()["jti"]
+    now = datetime.now(timezone.utc)
+    db.session.add(TokenBlocklist(jti=jti, created_at=now))
+    db.session.commit()
+    return jsonify(msg="JWT revoked")
+
+        
+@auth.post('/token/refresh')
+@jwt_required(refresh=True)
+def refresh_users_token():
+    identity=get_jwt_identity()
+    access = create_access_token(identity=identity)
+    
+    return jsonify({
+        'access':access
+    }), HTTP_200_OK
+        
+@auth.get('/<int:id>')
+@jwt_required()
+def get_user(id):
+    current_user = get_jwt_identity()
+    
+    user = User.query.filter_by(id=id).first()
+    
+    if user is None:
+        return jsonify({'msg': "email or password is invalid"}), HTTP_400_BAD_REQUEST
+    if user.username == current_user:
+    
+        return jsonify({
+            'username':user.username,
+            'email':user.email
+        })
+    else:
+        return jsonify({
+            'error':"You are not authenticate"
+        })
+        
+
+    
