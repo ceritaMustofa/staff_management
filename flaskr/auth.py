@@ -6,8 +6,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt, JWTManager
 from flaskr.constant.http_status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
 from flaskr.model import db, User, TokenBlocklist
+from flask_cors import CORS
 
 auth = Blueprint('auth', __name__, url_prefix="/api/v1/auth")
+CORS(auth)
 
 jwt = JWTManager()
 

@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from flaskr.auth import auth, jwt
 from flaskr.dashboard import dashboard
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 
 def create_app(test_config=None):
     #create and configure the app
@@ -24,18 +25,19 @@ def create_app(test_config=None):
         # Load the test config if passed in
         app.config.from_mapping(test_config)
         
-    # Ensure the instance folder exists
     
     db.app = app
     db.init_app(app)
     migrate = Migrate(app, db)
     
     jwt.init_app(app)
+    cors_allow_origin = {
+        "origins": "http://localhost:8080"
+    }
     
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
+    CORS(app, resources={r"/*": {"origins": cors_allow_origin}})
+    
+    
     
     
     app.register_blueprint(auth)
