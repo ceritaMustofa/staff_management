@@ -5,11 +5,11 @@ from flask import Blueprint, jsonify, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flaskr.constant.http_status_codes import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
 from flaskr.model import Position, User, db
+from flask_cors import CORS
 
 dashboard = Blueprint('dashboard', __name__, url_prefix='/api/v1/dashboard')
-
+CORS(dashboard)
 @dashboard.get('/')
-@jwt_required()
 def home():
 
     return jsonify({
