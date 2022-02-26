@@ -9,7 +9,7 @@ what framework and library i use in this project?
 - Flask-pymysql for handling connection to MySql db
 - Flask-SQLAlchemy for handling flask ORM
 - itsdangerous to secure data transfer
-- cryptography
-- python-dotenv
-- validators
+- cryptography for handling decrypt encrypt data from flask to mysql
+- python-dotenv for reading key-value pairs from a .flaskenv and .env file
+- validators used to validate the email
 - Werkzeug
